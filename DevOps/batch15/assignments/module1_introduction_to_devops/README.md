@@ -113,7 +113,7 @@ func main() {
 }
 ```
 
-![](img1.png)
+![](assets/images/img1.png)
 
 ## Task 2: Exposing Local Application
 
@@ -133,4 +133,4 @@ export NGROK_AUTHTOKEN=$YOUR_AUTHTOKEN
 ngrok http 8080
 ```
 
-![](img2.png)
+![](assets/images/img2.png)
