@@ -113,7 +113,7 @@ func main() {
 }
 ```
 
-## ![][image2]
+![](img1.png)
 
 ## Task 2: Exposing Local Application
 
@@ -127,10 +127,10 @@ func main() {
 2. Copy and export NGROK\_AUTHTOKEN dashboard into terminal session.  
 3. Run ngrok.
 
-| brew install ngrokexport NGROK\_AUTHTOKEN=\$YOUR\_AUTHTOKENngrok http 8080 |
-| :---- |
+```bash
+brew install ngrok
+export NGROK_AUTHTOKEN=$YOUR_AUTHTOKEN
+ngrok http 8080
+```
 
-![][image3]
-[image1]:
-[image2]:
-[image3]:
+![](img2.png)
