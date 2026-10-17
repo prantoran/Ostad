@@ -363,3 +363,87 @@ A new release of gh is available: 2.94.0 → 2.102.0
 To upgrade, run: brew upgrade gh
 https://github.com/cli/cli/releases/tag/v2.102.0
 ```
+
+```bash
+git remote add origin https://github.com/prantoran/nanur-khata.git
+git push -u origin main
+```
+
+## Task B
+Play Mitu: `git clone` the repo into another folder, add chittagong-mezban.md and push.
+
+```bash
+git clone git@github.com:prantoran/nanur-khata.git
+touch chittagong-mezban.md
+git add chittagong-mezban.md
+git commit -m "docs: Add chittagong-mezban.md"
+git push
+```
+
+## Task C
+Back in your folder, run `git fetch origin`, then `git merge origin/main`.
+```bash
+git fetch origin
+remote: Enumerating objects: 3, done.
+remote: Counting objects: 100% (3/3), done.
+remote: Compressing objects: 100% (1/1), done.
+remote: Total 2 (delta 1), reused 2 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (2/2), 245 bytes | 81.00 KiB/s, done.
+From https://github.com/prantoran/nanur-khata
+   dbea99b..a93c6f0  main       -> origin/main
+```
+
+```bash
+git merge origin/main
+Updating dbea99b..a93c6f0
+Fast-forward
+ chittagong-mezban.md | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 chittagong-mezban.md
+```
+
+## Task D  
+Mitu pushes again. This time use `git pull`.
+
+```bash
+cat > chittagong-mezban.md << EOF
+heredoc> from Mitu
+heredoc> EOF
+
+git add chittagong-mezban.md
+git commit -m "docs: Update chittagong-mezban.md"
+[main 192e363] docs: Update chittagong-mezban.md
+ 1 file changed, 1 insertion(+)
+git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 10 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 287 bytes | 287.00 KiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To github.com:prantoran/nanur-khata.git
+   a93c6f0..192e363  main -> main
+```
+
+```bash
+git pull
+remote: Enumerating objects: 5, done.
+remote: Counting objects: 100% (5/5), done.
+remote: Compressing objects: 100% (1/1), done.
+remote: Total 3 (delta 1), reused 3 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (3/3), 267 bytes | 53.00 KiB/s, done.
+From https://github.com/prantoran/nanur-khata
+   a93c6f0..192e363  main       -> origin/main
+Updating a93c6f0..192e363
+Fast-forward
+ chittagong-mezban.md | 1 +
+ 1 file changed, 1 insertion(+)
+```
+
+### Question: What is the difference between fetch + merge and pull?
+`git pull` is a shortcut command that automatically executes `git fetch` followed immediately by `git merge`. The difference between the two approaches is entirely about control and review.
+- `git fetch`: Downloads new commits, files, and references from the remote repository and updates your remote-tracking branches (like origin/main). It does not touch active local branch (main) or working directory.
+	- Review: Because the remote changes are isolated in origin/main, we can safely inspect what has been added (e.g., using git diff main..origin/main) without altering any of the local files. 
+- `git merge`: When we are ready, running `git merge origin/main` explicitly integrates those downloaded commits into the active local branch.
+- `git pull`: Fetches the remote changes and immediately forces a merge into the currently checked-out branch.
