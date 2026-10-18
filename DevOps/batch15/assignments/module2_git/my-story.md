@@ -498,3 +498,159 @@ nothing to commit, working tree clean
 ```
 
 ```bash
+cat biryani.md
+From main
+From Eid-special
+
+cat >> biryani.md << EOF
+heredoc> You forgot cardamom in the biryani!
+heredoc> EOF
+
+cat biryani.md
+From main
+From Eid-special
+You forgot cardamom in the biryani!
+
+git add biryani.md
+git commit -m "fix(biryani): add missing ingredient"
+[main f9b33f1] fix(biryani): add missing ingredient
+ 1 file changed, 1 insertion(+)
+
+git stash pop
+git commit -m "feat: complete hallua"
+[main 71bd552] feat: complete hallua
+ 1 file changed, 2 insertions(+)
+ create mode 100644 halua.md
+```
+
+## Task B
+Organize recipes into folders with `git mv`, delete an old recipe with `git rm`, and check `git log --stat -M`.
+
+```bash
+```bash
+mkdir sweets mains
+git mv bhapa-pitha.md shemai.md halua.md sweets/
+git mv biryani.md chittagong-mezban.md mains/
+ git status
+On branch main
+Your branch is ahead of 'origin/main' by 2 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	renamed:    biryani.md -> mains/biryani.md
+	renamed:    chittagong-mezban.md -> mains/chittagong-mezban.md
+	renamed:    bhapa-pitha.md -> sweets/bhapa-pitha.md
+	renamed:    halua.md -> sweets/halua.md
+	renamed:    shemai.md -> sweets/shemai.md
+
+ls
+kalabhuna.md	mains		sweets
+git rm kalabhuna.md
+git status
+On branch main
+Your branch is ahead of 'origin/main' by 3 commits.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	deleted:    kalabhuna.md
+
+git commit -m "refactor: organize recipes"
+[main 10f5477] refactor: organize recipes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ delete mode 100644 kalabhuna.md
+```
+
+```bash
+git log --stat -M -n 2
+commit 10f5477f04849943455966fe267d2563cdd8881c (HEAD -> main)
+Author: Pinku Deb Nath <prantoran@gmail.com>
+Date:   Sat Oct 17 23:20:40 2026 -0700
+
+    refactor: organize recipes
+
+ kalabhuna.md | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+commit de5af609fbfdf296cec4e78512171845b6c6363a
+Author: Pinku Deb Nath <prantoran@gmail.com>
+Date:   Sat Oct 17 23:18:08 2026 -0700
+
+    docs: Add kalabhuna
+
+ shemai.md => kalabhuna.md                          | 0
+ biryani.md => mains/biryani.md                     | 0
+ chittagong-mezban.md => mains/chittagong-mezban.md | 0
+ bhapa-pitha.md => sweets/bhapa-pitha.md            | 0
+ halua.md => sweets/halua.md                        | 0
+ sweets/shemai.md                                   | 0
+ 6 files changed, 0 insertions(+), 0 deletions(-)
+```
+- Using `git mv` stages both the deletion of the old path and the creation of the new path simultaneously, while `git log --stat -M` detects the similarity index (100%) and displays clean rename tracking (`{bhapa-pitha.md => sweets/bhapa-pitha.md}`) rather than treating them as lost and newly created files.
+
+## Task C
+Pick a commit and run git show [SHA].
+
+```bash
+git log --oneline
+10f5477 (HEAD -> main) refactor: organize recipes
+de5af60 docs: Add kalabhuna
+71bd552 feat: complete hallua
+f9b33f1 fix(biryani): add missing ingredient
+192e363 (origin/main, origin/HEAD) docs: Update chittagong-mezban.md
+a93c6f0 docs: Add chittagong-mezban.md
+dbea99b Merge branch 'eid-special'
+a8605f9 docs: Update biryani.md from eid-special
+3aa1772 docs: Update biryani.md from main
+8b6d452 docs: create shemai.md
+debac62 docs: create biryani.md
+8948ab8 docs: Update bhapa-pitha.md with gur instruction
+```
+
+```bash
+git show 192e363
+
+commit 192e363033d20c6a4f14e5a01152e7fdcfbb8f08 (origin/main, origin/HEAD)
+Author: Pinku Deb Nath <prantoran@gmail.com>
+Date:   Sat Oct 17 11:11:35 2026 -0700
+
+    docs: Update chittagong-mezban.md
+
+diff --git a/chittagong-mezban.md b/chittagong-mezban.md
+index e69de29..14aa9bf 100644
+--- a/chittagong-mezban.md
++++ b/chittagong-mezban.md
+@@ -0,0 +1 @@
++from Mitu
+```
+
+## Task D
+On a test branch, try `git reset --hard [older-commit]` and write down what you lost. Never do this on main!
+```bash
+git checkout -b reset-test
+git log --oneline
+10f5477 (HEAD -> reset-test, main) refactor: organize recipes
+de5af60 docs: Add kalabhuna
+71bd552 feat: complete hallua
+f9b33f1 fix(biryani): add missing ingredient
+192e363 (origin/main, origin/HEAD) docs: Update chittagong-mezban.md
+a93c6f0 docs: Add chittagong-mezban.md
+dbea99b Merge branch 'eid-special'
+a8605f9 docs: Update biryani.md from eid-special
+3aa1772 docs: Update biryani.md from main
+8b6d452 docs: create shemai.md
+debac62 docs: create biryani.md
+
+git reset --hard 8b6d452
+HEAD is now at 8b6d452 docs: create shemai.md
+```
+- What I Lost: Running `git reset --hard 8b6d452` forcibly moved the `reset-test` branch pointer backward by 9 commits to 8b6d452, and wiped both the staging area and the working directory to match that older snapshot.
+
+### Question: Why are rebase and reset --hard dangerous on a shared branch?
+1. They Rewrite Commit History: Both commands alter existing commit history—`git reset --hard` discards commits entirely, while `git rebase` replaces existing commits with brand-new commits that have different SHA-1 hashes.
+2. Data Loss & Destroyed Work: `git reset --hard` permanently wipes uncommitted changes in the working directory and staging area without warning. If force-pushed (`git push --force`) to a shared branch like `main`, it overwrites commits that teammates (like Mitu) may have pushed in the meantime.
+
+# Submission
+
+![](assets/images/git_log.png)
