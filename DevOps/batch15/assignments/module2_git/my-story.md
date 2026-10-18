@@ -447,3 +447,54 @@ Fast-forward
 	- Review: Because the remote changes are isolated in origin/main, we can safely inspect what has been added (e.g., using git diff main..origin/main) without altering any of the local files. 
 - `git merge`: When we are ready, running `git merge origin/main` explicitly integrates those downloaded commits into the active local branch.
 - `git pull`: Fetches the remote changes and immediately forces a merge into the currently checked-out branch.
+
+# Chapter 5:  Half-Cooked Halua and Time Travel
+Halfway through the halua recipe, Nanu calls: "You forgot cardamom in the biryani!"
+## Task A  
+Save the halua work with git stash, fix and commit the biryani, then git stash pop.
+
+```bash
+cat >> halua.md << EOF
+heredoc> Add halua mix
+heredoc> EOF
+```
+
+```bash
+git status
+
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	halua.md
+
+nothing added to commit but untracked files present (use "git add" to track)
+```
+
+```bash
+git add halua.md
+git status
+
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   halua.md
+```
+
+```bash
+git stash
+Saved working directory and index state WIP on main: 192e363 docs: Update chittagong-mezban.md
+```
+
+```bash
+git status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+```
+
+```bash
