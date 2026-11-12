@@ -34,8 +34,11 @@ IGW:
 
 ![](assets/images/igw.png)
 
-Routing table:
+Routing tables:
+
 ![](assets/images/rt.png)
+
+![](assets/images/rt2.png)
 
 ```bash
 aws ec2 describe-route-tables \
