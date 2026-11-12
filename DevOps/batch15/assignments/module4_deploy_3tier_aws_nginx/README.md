@@ -45,3 +45,17 @@ NAT Gateway: `3-tier-nat-gateway`
 ```bash
 
 ```
+
+### 3. Enable Auto-assign public IPv4 on the Web Public Subnet (subnet-0e216fd3fe7471181)
+```bash
+aws ec2 modify-subnet-attribute \
+  --subnet-id subnet-0e216fd3fe7471181 \
+  --map-public-ip-on-launch \
+  --profile ostad \
+  --region ap-southeast-1
+```
+
+### 4. Create the NAT Gateway (3tier-nat-gateway) in the Public Subnet using Elastic IP eipalloc-0f929bf91faf1ed01
+
+![](assets/images/nat-gateway.png)
+
