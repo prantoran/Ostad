@@ -30,7 +30,11 @@ Create VPC using AWS Console
 
 ![](assets/images/vpc.png)
 
-### 2. Create IGW, allocate Elastic IP, & create the NAT Gateway in the public subnet
+IGW:
+
+![](assets/images/igw.png)
+
+### 2. Allocate Elastic IP, & create the NAT Gateway in the public subnet
 
 IGW: `3-tier-igw`
 
