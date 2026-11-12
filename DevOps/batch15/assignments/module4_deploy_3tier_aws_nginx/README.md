@@ -34,6 +34,26 @@ IGW:
 
 ![](assets/images/igw.png)
 
+Routing table:
+![](assets/images/rt.png)
+
+```bash
+aws ec2 describe-route-tables \
+  --route-table-ids rtb-0404feeb6dcf6365c \
+  --profile ostad \      
+  --region ap-southeast-1 \
+  --query 'RouteTables[0].Routes' \
+  --output table
+---------------------------------------------------------------------------------
+|                              DescribeRouteTables                              |
++----------------------+-------------------------+--------------------+---------+
+| DestinationCidrBlock |        GatewayId        |      Origin        |  State  |
++----------------------+-------------------------+--------------------+---------+
+|  10.0.0.0/16         |  local                  |  CreateRouteTable  |  active |
+|  0.0.0.0/0           |  igw-08f1f9a239246c6f6  |  CreateRoute       |  active |
++----------------------+-------------------------+--------------------+---------+
+```
+
 ### 2. Allocate Elastic IP, & create the NAT Gateway in the public subnet
 
 IGW: `3-tier-igw`
@@ -53,7 +73,9 @@ aws ec2 modify-subnet-attribute \
 ```
 
 ```bash
-aws ec2 describe-subnets --region ap-southeast-1 --profile ostad --filter "Name=tag:Name,Values=3tier-vpc-subnet-public1-ap-southeast-1a" --query 'Subnets[0].{SubnetId:SubnetId,MapPublicIpOnLaunch:MapPublicIpOnLaunch,VpcId:VpcId}' --output table
+aws ec2 describe-subnets --region ap-southeast-1 --profile ostad \
+    --filter "Name=tag:Name,Values=3tier-vpc-subnet-public1-ap-southeast-1a" \
+    --query 'Subnets[0].{SubnetId:SubnetId,MapPublicIpOnLaunch:MapPublicIpOnLaunch,VpcId:VpcId}' --output table
 ------------------------------------------------------------------------------
 |                               DescribeSubnets                              |
 +---------------------+----------------------------+-------------------------+
