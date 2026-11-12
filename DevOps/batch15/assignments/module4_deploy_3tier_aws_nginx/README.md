@@ -52,6 +52,17 @@ aws ec2 modify-subnet-attribute \
   --region ap-southeast-1
 ```
 
+```bash
+aws ec2 describe-subnets --region ap-southeast-1 --profile ostad --filter "Name=tag:Name,Values=3tier-vpc-subnet-public1-ap-southeast-1a" --query 'Subnets[0].{SubnetId:SubnetId,MapPublicIpOnLaunch:MapPublicIpOnLaunch,VpcId:VpcId}' --output table
+------------------------------------------------------------------------------
+|                               DescribeSubnets                              |
++---------------------+----------------------------+-------------------------+
+| MapPublicIpOnLaunch |         SubnetId           |          VpcId          |
++---------------------+----------------------------+-------------------------+
+|  True               |  subnet-0e216fd3fe7471181  |  vpc-0908137b37b7c1693  |
++---------------------+----------------------------+-------------------------+
+```
+
 ### 4. Create the NAT Gateway (3tier-nat-gateway) in the Public Subnet using Elastic IP eipalloc-0f929bf91faf1ed01
 
 ![](assets/images/nat-gateway.png)
