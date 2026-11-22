@@ -1,0 +1,12 @@
+[Unit]
+Description=ShopNest backend (%i)
+After=network.target
+
+[Service]
+User=shopnest
+ExecStart=/opt/shopnest/bin/run-backend.sh %i
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

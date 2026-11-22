@@ -1,0 +1,126 @@
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      sha:
+        required: true
+        type: string
+      ci_run_id:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.sha }} to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.APP_URL }}
+    env:
+      SSH_USER: ${{ vars.SSH_USER }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      ENVN: ${{ inputs.environment }}
+      SHA: ${{ inputs.sha }}
+    steps:
+      - name: Checkout deploy scripts at the tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Download build artifacts produced by CI
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-dist"
+          path: artifacts
+          run-id: ${{ inputs.ci_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host target
+            HostName ${SSH_HOST}
+            User ${SSH_USER}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Package release
+        run: |
+          mkdir -p release/backend release/frontend
+          cp -r artifacts/backend-dist/. release/backend/
+          cp -r artifacts/frontend-dist/. release/frontend/
+          echo "${SHA}" > release/VERSION
+          tar -czf "release-${SHA}.tgz" -C release .
+
+      - name: Upload release and record previous version
+        id: prev
+        run: |
+          scp "release-${SHA}.tgz" "target:/tmp/release-${SHA}.tgz"
+          scp deploy/deploy.sh target:/tmp/deploy.sh
+          ssh target "sudo install -m 755 /tmp/deploy.sh /opt/shopnest/bin/deploy.sh"
+          PREV=$(ssh target "sudo /opt/shopnest/bin/deploy.sh current ${ENVN}")
+          echo "previous=${PREV}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy (blue/green over SSH)
+        run: |
+          # Environment config is piped over stdin; it is never written to the repo or logs.
+          {
+            echo "DB_HOST=${{ vars.DB_HOST }}"
+            echo "DB_PORT=5432"
+            echo "DB_NAME=${{ vars.DB_NAME }}"
+            echo "DB_USER=${{ vars.DB_USER }}"
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+            echo "NODE_ENV=production"
+          } | ssh target "sudo /opt/shopnest/bin/deploy.sh deploy ${ENVN} ${SHA}" | tee deploy-output.log
+
+      - name: Verify from outside (public URL)
+        run: |
+          for i in $(seq 1 10); do
+            V=$(curl -fsS "${{ vars.APP_URL }}/api/version" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p' || true)
+            echo "attempt $i: live version = ${V:-none}"
+            [ "$V" = "${SHA}" ] && curl -fsS "${{ vars.APP_URL }}/health" && exit 0
+            sleep 3
+          done
+          echo "::error::External health check failed"
+          exit 1
+
+      - name: Automatic rollback to last good version
+        if: failure() && steps.prev.outputs.previous != '' && steps.prev.outputs.previous != 'none'
+        run: |
+          echo "::warning::Rolling back ${ENVN} to ${{ steps.prev.outputs.previous }}"
+          ssh target "sudo /opt/shopnest/bin/deploy.sh rollback ${ENVN} ${{ steps.prev.outputs.previous }}"
+
+      - name: Fetch deployment log
+        if: always()
+        run: ssh target "sudo cat /var/log/shopnest/deploy-${ENVN}.log" > "deploy-${ENVN}-${SHA}.log" || true
+
+      - name: Upload deployment log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log-${{ inputs.environment }}-${{ inputs.sha }}
+          path: deploy-*.log
+          retention-days: 90
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Deployment ${{ job.status }}"
+            echo "- Environment: ${ENVN}"
+            echo "- Commit: \`${SHA}\`"
+            echo "- Previous version: \`${{ steps.prev.outputs.previous }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

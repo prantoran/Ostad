@@ -1,0 +1,57 @@
+name: Manual rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        required: true
+      sha:
+        description: Full commit SHA of an earlier release still on the server (see deploy history)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    name: Roll back ${{ inputs.environment }} to ${{ inputs.sha }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      ENVN: ${{ inputs.environment }}
+      SHA: ${{ inputs.sha }}
+    steps:
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host target
+            HostName ${{ secrets.SSH_HOST }}
+            User ${{ vars.SSH_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking yes
+          EOF
+      - name: Show available releases
+        run: ssh target "sudo /opt/shopnest/bin/deploy.sh history ${ENVN}"
+      - name: Roll back
+        run: ssh target "sudo /opt/shopnest/bin/deploy.sh rollback ${ENVN} ${SHA}"
+      - name: Verify
+        run: |
+          V=$(curl -fsS "${{ vars.APP_URL }}/api/version")
+          echo "live: $V"
+          echo "$V" | grep -q "${SHA}"
+      - name: Fetch deployment log
+        if: always()
+        run: ssh target "sudo cat /var/log/shopnest/deploy-${ENVN}.log" > "rollback-${ENVN}.log" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rollback-log-${{ inputs.environment }}-${{ github.run_id }}
+          path: rollback-*.log
+          retention-days: 90

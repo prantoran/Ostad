@@ -1,0 +1,38 @@
+name: CD
+
+# Runs only after the CI workflow succeeded on main.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cd-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-staging:
+    name: Deploy to staging
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: staging
+      sha: ${{ github.event.workflow_run.head_sha }}
+      ci_run_id: ${{ github.event.workflow_run.id }}
+    secrets: inherit
+
+  # The 'production' environment has required reviewers => manual approval.
+  deploy-production:
+    name: Deploy to production
+    needs: deploy-staging
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: production
+      sha: ${{ github.event.workflow_run.head_sha }}
+      ci_run_id: ${{ github.event.workflow_run.id }}
+    secrets: inherit
